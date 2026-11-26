@@ -1,0 +1,53 @@
+{
+  "title": "Add, tick and delete tasks",
+  "binding": "look",
+  "drawnFrom": {
+    "commit": "04b41f287399d08f051d62e320e4e6e639b9e0a5",
+    "files": [],
+    "unbuilt": []
+  },
+  "screens": [
+    {
+      "id": "tasks",
+      "title": "Tasks",
+      "criteria": [
+        "C1",
+        "C3",
+        "C4",
+        "C5",
+        "C8",
+        "C9",
+        "C11"
+      ],
+      "shows": "The Tasks page: title, the 'What needs doing?' field with 'Add', and seven tasks as rows (round checkbox, title, delete button), two of them done: green tick, struck-through grey title"
+    },
+    {
+      "id": "tasks-empty",
+      "title": "No tasks yet",
+      "criteria": [
+        "C7",
+        "C8"
+      ],
+      "shows": "The page with no tasks: the message 'Nothing to do yet. Add your first task above.' under the field"
+    },
+    {
+      "id": "tasks-invalid",
+      "title": "Add with an empty title",
+      "criteria": [
+        "C2",
+        "C8"
+      ],
+      "shows": "The field empty after pressing Add, with 'Type a task first.' in red under it; the list unchanged"
+    }
+  ],
+  "notShown": [
+    {
+      "criterion": "C6",
+      "why": "keeping the tasks across a reload is storage; the screen looks like #tasks"
+    },
+    {
+      "criterion": "C10",
+      "why": "blocked or unreadable storage shows the empty list of #tasks-empty, unchanged"
+    }
+  ]
+}
