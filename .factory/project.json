@@ -1,0 +1,60 @@
+{
+  "stack": {
+    "languages": [
+      "typescript"
+    ],
+    "frameworks": [
+      "react"
+    ],
+    "packageManager": "pnpm",
+    "tests": [
+      "vitest"
+    ],
+    "linters": [
+      "oxlint",
+      "prettier"
+    ],
+    "ci": [
+      "github-actions"
+    ],
+    "adr": "docs/adr"
+  },
+  "commands": {
+    "install": "pnpm install --frozen-lockfile",
+    "test": "pnpm test",
+    "lint": "pnpm lint",
+    "typecheck": "pnpm typecheck",
+    "build": "pnpm build",
+    "testFile": "pnpm exec vitest run {files}",
+    "format": "pnpm format"
+  },
+  "run": {
+    "readyPath": "/",
+    "start": "pnpm start --port $PORT",
+    "env": ".env.example",
+    "data": "browser localStorage only; nothing is written to the repository"
+  },
+  "ui": true,
+  "browser": "playwright",
+  "skills": {
+    "planner": [],
+    "implementer": [],
+    "qa": [],
+    "reviewer": [],
+    "qc": []
+  },
+  "design": {
+    "doc": "DESIGN.md",
+    "tokens": ".factory/design/tokens.json",
+    "uiStore": ".factory/design/ui-store",
+    "mockups": ".factory/design/mockups"
+  },
+  "docs": {
+    "agents": "CLAUDE.md",
+    "product": ".factory/product.md",
+    "decisions": ".factory/decisions.md"
+  },
+  "standards": "CODING_STANDARDS.md",
+  "protectedPaths": [],
+  "escalate": []
+}
