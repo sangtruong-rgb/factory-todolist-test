@@ -1,0 +1,19 @@
+{
+  "libraries": [],
+  "components": [
+    {
+      "name": "App",
+      "file": "src/App.tsx",
+      "kind": "component",
+      "props": [],
+      "variants": {},
+      "usedIn": 1,
+      "renders": 1,
+      "example": "src/main.tsx"
+    }
+  ],
+  "duplicates": [],
+  "patterns": {},
+  "unused": [],
+  "preferred": {}
+}
