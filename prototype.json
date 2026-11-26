@@ -1,0 +1,51 @@
+{
+  "title": "Give a task a due date",
+  "binding": "look",
+  "drawnFrom": {
+    "commit": "04b41f287399d08f051d62e320e4e6e639b9e0a5",
+    "files": [],
+    "unbuilt": [
+      "the Tasks page, from 'Add, tick and delete tasks that stay after a reload'",
+      "the pencil button and edit mode of each task, from 'Edit a task's title'",
+      "the count of tasks left and the filter row, from 'Filter tasks by All, Active and Done, and clear the completed ones'"
+    ]
+  },
+  "screens": [
+    {
+      "id": "due-list",
+      "title": "Tasks with due dates",
+      "criteria": [
+        "C2",
+        "C3",
+        "C6"
+      ],
+      "shows": "Dates at the right of titles: '28 Nov', 'Today', 'Overdue, 25 Nov' in bold red on a task not done, a date with its year, no date on one task, and a done task past its date shown plain"
+    },
+    {
+      "id": "due-add",
+      "title": "Adding a task with a due date",
+      "criteria": [
+        "C1",
+        "C6",
+        "C7",
+        "C8"
+      ],
+      "shows": "The add form with a title typed and a date picked in the date field between the title field and 'Add'"
+    },
+    {
+      "id": "due-editing",
+      "title": "Changing a due date",
+      "criteria": [
+        "C4",
+        "C6"
+      ],
+      "shows": "The first task in edit mode: title field, a date field holding its date, 'Save' and 'Cancel'"
+    }
+  ],
+  "notShown": [
+    {
+      "criterion": "C5",
+      "why": "keeping the dates across a reload and working out overdue each day is storage and time; the screen looks like #due-list"
+    }
+  ]
+}
