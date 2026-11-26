@@ -1,0 +1,289 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Tasks: filter and clear</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/*
+Design brief (agreed with the user, 2026-11-26): vibe "Calm & spare" - a quiet paper-like tool with generous
+whitespace and one accent colour. Theme: light and dark, following the system setting, no switch.
+Colours and type: no brand, palette from the vibe, system fonts. Motion: none (hover and focus colours only).
+
+Plan
+- Colour: paper #FAFAF7, ink #1C1C1A, muted #6B6B66, line #E4E3DD, accent (deep green) #2F6F5E,
+  overdue #B4432E. Dark: paper #151614, ink #ECEBE5, muted #A3A29B, line #2E2F2C, accent #7DBFA9, overdue #F08A70.
+- Type: the system sans (SF / Segoe UI), body 15px, the page title 28px semibold, numbers tabular.
+- Layout: one left-aligned column, at most 600px, no cards: tasks are rows on hairlines, 52px tall.
+  The header carries the title and what is left; the add field sits under it; filters close the list.
+- Principles: the one strong thing is the green tick; everything else stays quiet. Overdue is said in words
+  and in colour, never colour alone. Every control is reachable by keyboard and visible without hovering.
+Review against the generic default: no cream + serif + terracotta, no card kit with soft shadows, no
+all-caps eyebrows, no monospace labels; the hairline list is kept because a list of tasks is what this is.
+*/
+:root {
+  color-scheme: light dark;
+  --bg: #FAFAF7; --surface: #FFFFFF; --ink: #1C1C1A; --muted: #6B6B66; --line: #E4E3DD;
+  --hover: #EFEEE9; --accent: #2F6F5E; --accent-ink: #FFFFFF; --overdue: #B4432E;
+  --tick: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4 8-9' fill='none' stroke='%23FFFFFF' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #151614; --surface: #1D1E1C; --ink: #ECEBE5; --muted: #A3A29B; --line: #2E2F2C;
+    --hover: #262725; --accent: #7DBFA9; --accent-ink: #10241D; --overdue: #F08A70;
+    --tick: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4 8-9' fill='none' stroke='%2310241D' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 var(--font); -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.app { max-width: 600px; margin: 0 auto; padding: 56px 24px 72px; }
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.top h1 { margin: 0; font-size: 28px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em; }
+.left { margin: 0; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.add { display: flex; gap: 8px; }
+.field { height: 48px; padding: 0 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 16px; min-width: 0; }
+.field::placeholder { color: var(--muted); opacity: 1; }
+.field:focus-visible { outline-offset: 0; border-color: var(--accent); }
+.add .title-field { flex: 1; }
+.add .due-field { width: 168px; color: var(--ink); }
+.btn { height: 48px; padding: 0 20px; border: 0; border-radius: 8px; background: var(--accent); color: var(--accent-ink); font-weight: 600; cursor: pointer; }
+.btn:hover { filter: brightness(1.08); }
+.btn.small { height: 36px; padding: 0 14px; font-size: 14px; }
+.ghost { height: 36px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; font-size: 14px; }
+.ghost:hover { background: var(--hover); color: var(--ink); }
+.msg { margin: 8px 0 0; color: var(--overdue); font-size: 14px; }
+
+.list { list-style: none; margin: 24px 0 0; padding: 0; border-top: 1px solid var(--line); }
+.row { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 4px; border-bottom: 1px solid var(--line); }
+.row .name { flex: 1; min-width: 0; padding: 14px 0; overflow-wrap: anywhere; }
+.row.done .name { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--muted); }
+.check { appearance: none; -webkit-appearance: none; flex: none; width: 22px; height: 22px; margin: 0; border: 1.5px solid var(--muted); border-radius: 50%; cursor: pointer; background: transparent center / 16px no-repeat; }
+.check:hover { border-color: var(--accent); }
+.check:checked { background-color: var(--accent); border-color: var(--accent); background-image: var(--tick); }
+.due { flex: none; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.due.overdue { color: var(--overdue); font-weight: 600; }
+.icon { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
+.icon:hover { background: var(--hover); color: var(--ink); }
+.icon svg { width: 16px; height: 16px; }
+
+.row.editing { padding: 8px 4px; }
+.edit { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex: 1; }
+.edit .field { height: 36px; font-size: 15px; }
+.edit .title-field { flex: 1 1 220px; }
+.edit .due-field { width: 160px; }
+.edit .msg { flex-basis: 100%; margin: 0; }
+
+.empty { margin: 0; padding: 32px 4px; color: var(--muted); border-bottom: 1px solid var(--line); }
+.foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
+.filters { display: flex; gap: 4px; }
+.filters button { height: 32px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; font-size: 14px; }
+.filters button:hover { background: var(--hover); color: var(--ink); }
+.filters button[aria-pressed="true"] { background: var(--hover); color: var(--ink); font-weight: 600; }
+.clear { height: 32px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; font-size: 14px; }
+.clear:hover:not(:disabled) { background: var(--hover); color: var(--ink); }
+.clear:disabled { cursor: default; color: var(--muted); opacity: 0.55; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (max-width: 520px) {
+  .app { padding: 28px 16px 56px; }
+  .add { flex-wrap: wrap; }
+  .add .title-field { flex-basis: 100%; }
+  .add .due-field { flex: 1; width: auto; }
+  .add:not(:has(.due-field)) .title-field { flex-basis: 0; }
+  .foot { flex-wrap: wrap; }
+}
+
+/* The prototype's own bar: not part of the product. */
+.proto-bar { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 8px 16px; background: #2B2B29; color: #F4F4F0; font: 12px/1.4 var(--font); }
+.proto-bar strong { margin-right: 6px; }
+.proto-bar a { color: #F4F4F0; text-decoration: underline; text-underline-offset: 2px; }
+.proto-bar a[aria-current="page"] { font-weight: 700; text-decoration: none; }
+.proto-bar .note { color: #C9C9C2; }
+.proto-bar button { border: 1px solid #77776f; border-radius: 4px; background: transparent; color: #F4F4F0; font: inherit; padding: 2px 8px; cursor: pointer; }
+</style>
+<nav class="proto-bar" aria-label="Prototype screens"><strong>Prototype, sample data</strong><a href="#filter-all">All tasks</a><a href="#filter-active">Active tasks</a><a href="#filter-done">Done tasks</a><a href="#filter-active-empty">Active, none left</a><a href="#filter-done-empty">Done, none yet</a></nav>
+<section data-screen="filter-all" aria-label="All tasks"><div class="mount"></div></section>
+<section data-screen="filter-active" aria-label="Active tasks"><div class="mount"></div></section>
+<section data-screen="filter-done" aria-label="Done tasks"><div class="mount"></div></section>
+<section data-screen="filter-active-empty" aria-label="Active, none left"><div class="mount"></div></section>
+<section data-screen="filter-done-empty" aria-label="Done, none yet"><div class="mount"></div></section>
+<script>
+// The todolist prototype: one app instance per screen, state kept in memory.
+// features: which tickets' parts exist ({ edit, filter, due }); change: which of
+// 'core' | 'edit' | 'filter' | 'due' the ticket on show changes (marked data-change).
+(function () {
+  const MAX = 200;
+  const DAY = 86400000;
+  const todayNow = () => { const t = new Date(); t.setHours(0, 0, 0, 0); return t; };
+  const today = todayNow();
+  const isoOf = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const dayFrom = (n) => isoOf(new Date(today.getTime() + n * DAY));
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const parse = (iso) => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d); };
+  function dueText(iso, done) {
+    const today = todayNow();
+    const d = parse(iso);
+    const label = `${d.getDate()} ${MONTHS[d.getMonth()]}${d.getFullYear() !== today.getFullYear() ? ' ' + d.getFullYear() : ''}`;
+    if (d.getTime() === today.getTime()) return { text: 'Today', overdue: false };
+    if (!done && d < today) return { text: `Overdue, ${label}`, overdue: true };
+    return { text: label, overdue: false };
+  }
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const PENCIL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 2.5l3 3L6 13H3v-3z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+  const CROSS = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+
+  let nextId = 1000;
+  function mount(root, seed) {
+    const f = Object.assign({ edit: false, filter: false, due: false }, seed.features);
+    const change = new Set(seed.change || []);
+    const mark = (part) => (change.has(part) ? ' data-change' : '');
+    const s = {
+      tasks: (seed.tasks || []).map((t) => Object.assign({ id: nextId++, done: false, due: null }, t)),
+      draft: seed.draft || '', draftDue: seed.draftDue || '', error: !!seed.error,
+      editingId: null, editDraft: '', editDue: '', editError: false,
+      filter: seed.filter || 'all',
+    };
+    if (seed.editing !== undefined) {
+      const t = s.tasks[seed.editing];
+      s.editingId = t.id; s.editDraft = seed.editDraft !== undefined ? seed.editDraft : t.title; s.editDue = t.due || ''; s.editError = !!seed.editError;
+    }
+    let focus = null;
+
+    function visible() {
+      if (!f.filter || s.filter === 'all') return s.tasks;
+      return s.tasks.filter((t) => (s.filter === 'done' ? t.done : !t.done));
+    }
+    function row(t) {
+      if (t.id === s.editingId) {
+        return `<li class="row editing"${mark('edit')}><form class="edit" data-act="save">
+          <input class="field title-field" name="title" maxlength="${MAX}" aria-label="Task title" value="${esc(s.editDraft)}">
+          ${f.due ? `<input class="field due-field" type="date" name="due" aria-label="Due date"${mark('due')} value="${esc(s.editDue)}">` : ''}
+          <button class="btn small" type="submit">Save</button>
+          <button class="ghost" type="button" data-act="cancel">Cancel</button>
+          ${s.editError ? '<p class="msg" role="alert">A task needs a title.</p>' : ''}
+        </form></li>`;
+      }
+      const due = f.due && t.due ? dueText(t.due, t.done) : null;
+      return `<li class="row${t.done ? ' done' : ''}">
+        <input class="check" type="checkbox" data-act="toggle" data-id="${t.id}" aria-label="Done: ${esc(t.title)}"${t.done ? ' checked' : ''}>
+        <span class="name">${esc(t.title)}</span>
+        ${due ? `<span class="due${due.overdue ? ' overdue' : ''}"${mark('due')}>${due.text}</span>` : ''}
+        ${f.edit ? `<button class="icon" type="button" data-act="edit" data-id="${t.id}" aria-label="Edit ${esc(t.title)}"${mark('edit')}>${PENCIL}</button>` : ''}
+        <button class="icon" type="button" data-act="delete" data-id="${t.id}" aria-label="Delete ${esc(t.title)}">${CROSS}</button>
+      </li>`;
+    }
+    function render() {
+      const list = visible();
+      const left = s.tasks.filter((t) => !t.done).length;
+      const anyDone = s.tasks.some((t) => t.done);
+      let empty = '';
+      if (s.tasks.length === 0) empty = 'Nothing to do yet. Add your first task above.';
+      else if (list.length === 0) empty = s.filter === 'active' ? 'Nothing left to do.' : 'No finished tasks yet.';
+      const emptyMark = s.tasks.length === 0 ? mark('core') : mark('filter');
+      root.innerHTML = `<main class="app"${mark('core')}>
+        <header class="top"><h1>Tasks</h1>${f.filter && s.tasks.length ? `<p class="left"${mark('filter')}>${left} ${left === 1 ? 'task' : 'tasks'} left</p>` : ''}</header>
+        <form class="add" data-act="add">
+          <input class="field title-field" name="title" maxlength="${MAX}" placeholder="What needs doing?" aria-label="What needs doing?" value="${esc(s.draft)}">
+          ${f.due ? `<input class="field due-field" type="date" name="due" aria-label="Due date (optional)"${mark('due')} value="${esc(s.draftDue)}">` : ''}
+          <button class="btn" type="submit">Add</button>
+        </form>
+        ${s.error ? '<p class="msg" role="alert">Type a task first.</p>' : ''}
+        ${list.length ? `<ul class="list" aria-label="Tasks">${list.map(row).join('')}</ul>` : `<ul class="list" aria-label="Tasks"></ul><p class="empty"${emptyMark}>${empty}</p>`}
+        ${f.filter && s.tasks.length ? `<footer class="foot"${mark('filter')}>
+          <div class="filters" role="group" aria-label="Show">
+            ${['all', 'active', 'done'].map((k) => `<button type="button" data-act="filter" data-filter="${k}" aria-pressed="${s.filter === k}">${{ all: 'All', active: 'Active', done: 'Done' }[k]}</button>`).join('')}
+          </div>
+          <button class="clear" type="button" data-act="clear"${anyDone ? '' : ' disabled'}>Clear completed</button>
+        </footer>` : ''}
+      </main>`;
+      if (focus) { const el = root.querySelector(focus) || (focus.includes('toggle') ? root.querySelector('.add .title-field') : null); if (el) { el.focus(); if (el.select && focus.includes('edit')) el.select(); } focus = null; }
+    }
+    const find = (id) => s.tasks.find((t) => t.id === Number(id));
+    root.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const form = e.target;
+      if (form.dataset.act === 'add') {
+        const title = form.title.value.trim();
+        if (!title) { s.error = true; s.draft = ''; focus = '.add .title-field'; return render(); }
+        s.tasks.unshift({ id: nextId++, title: title.slice(0, MAX), done: false, due: f.due && form.due.value ? form.due.value : null });
+        if (f.filter) s.filter = 'all';
+        s.draft = ''; s.draftDue = ''; s.error = false; focus = '.add .title-field'; render();
+      } else if (form.dataset.act === 'save') {
+        const title = form.title.value.trim();
+        if (!title) { s.editError = true; s.editDraft = ''; if (f.due) s.editDue = form.due.value; focus = '.edit .title-field'; return render(); }
+        const t = find(s.editingId); t.title = title.slice(0, MAX); if (f.due) t.due = form.due.value || null;
+        s.editingId = null; s.editError = false; focus = `[data-act="edit"][data-id="${t.id}"]`; render();
+      }
+    });
+    root.addEventListener('input', (e) => {
+      if (e.target.closest('.add') && e.target.name === 'title') {
+        s.draft = e.target.value;
+        if (s.error && s.draft.trim()) { s.error = false; const m = root.querySelector('.add + .msg'); if (m) m.remove(); }
+      }
+      if (e.target.closest('.add') && e.target.name === 'due') s.draftDue = e.target.value;
+      if (e.target.closest('.edit') && e.target.name === 'title') { s.editDraft = e.target.value; if (s.editError && s.editDraft.trim()) { s.editError = false; const m = root.querySelector('.edit .msg'); if (m) m.remove(); } }
+      if (e.target.closest('.edit') && e.target.name === 'due') s.editDue = e.target.value;
+    });
+    root.addEventListener('change', (e) => {
+      if (e.target.dataset.act === 'toggle') { find(e.target.dataset.id).done = e.target.checked; focus = `[data-act="toggle"][data-id="${e.target.dataset.id}"]`; render(); }
+    });
+    root.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-act]');
+      if (!b) return;
+      const act = b.dataset.act;
+      if (act === 'delete') { s.tasks = s.tasks.filter((t) => t.id !== Number(b.dataset.id)); if (!s.tasks.length) s.filter = 'all'; focus = '.add .title-field'; render(); }
+      if (act === 'edit') { const t = find(b.dataset.id); s.editingId = t.id; s.editDraft = t.title; s.editDue = t.due || ''; s.editError = false; focus = '.edit .title-field'; render(); }
+      if (act === 'cancel') { const id = s.editingId; s.editingId = null; s.editError = false; focus = `[data-act="edit"][data-id="${id}"]`; render(); }
+      if (act === 'filter') { s.filter = b.dataset.filter; if (s.editingId !== null && !visible().some((t) => t.id === s.editingId)) { s.editingId = null; s.editError = false; } focus = `[data-filter="${s.filter}"]`; render(); }
+      if (act === 'clear') { s.tasks = s.tasks.filter((t) => !t.done); if (!find(s.editingId)) { s.editingId = null; s.editError = false; } if (!s.tasks.length) s.filter = 'all'; focus = '.add .title-field'; render(); }
+    });
+    root.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && e.target.closest('.edit')) { e.preventDefault(); root.querySelector('[data-act="cancel"]').click(); }
+    });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+    render();
+  }
+
+  // Sample data, dates relative to today so "overdue" stays true.
+  window.TODO_SAMPLE = () => [
+    { title: 'Buy oat milk and bread', due: dayFrom(2) },
+    { title: 'Call the dentist to move Thursday’s appointment', due: dayFrom(-1) },
+    { title: 'Return the library books', due: dayFrom(0) },
+    { title: 'Mua quà sinh nhật cho mẹ', due: null },
+    { title: 'Draft the agenda for Monday’s planning meeting with the design and support teams, and send it round before noon', due: dayFrom(5) },
+    { title: 'Pay the electricity bill', done: true, due: dayFrom(-3) },
+    { title: 'Book train tickets to Đà Nẵng', done: true, due: dayFrom(40) },
+  ];
+
+  window.TODO_START = function (screens) {
+    for (const el of document.querySelectorAll('[data-screen]')) {
+      const seed = screens[el.dataset.screen];
+      mount(el.querySelector('.mount'), seed);
+    }
+    function show() {
+      const ids = Object.keys(screens);
+      const id = ids.includes(location.hash.slice(1)) ? location.hash.slice(1) : ids[0];
+      for (const el of document.querySelectorAll('[data-screen]')) el.hidden = el.dataset.screen !== id;
+      for (const a of document.querySelectorAll('.proto-bar a')) { if (a.getAttribute('href') === '#' + id) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }
+    }
+    window.addEventListener('hashchange', show);
+    show();
+  };
+})();
+
+(function () {
+  const S = window.TODO_SAMPLE;
+  const D = (n) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  const F = { edit: true, filter: true };
+  const C = ['filter'];
+  window.TODO_START({
+  "filter-all": { features: F, change: C, tasks: S(), filter: 'all' },
+  "filter-active": { features: F, change: C, tasks: S(), filter: 'active' },
+  "filter-done": { features: F, change: C, tasks: S(), filter: 'done' },
+  "filter-active-empty": { features: F, change: C, tasks: S().map((t) => ({ ...t, done: true })), filter: 'active' },
+  "filter-done-empty": { features: F, change: C, tasks: S().filter((t) => !t.done), filter: 'done' },
+  });
+})();
+</script>
+</body></html>

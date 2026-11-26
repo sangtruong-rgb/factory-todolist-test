@@ -1,0 +1,70 @@
+{
+  "title": "Filter tasks and clear the completed ones",
+  "binding": "look",
+  "drawnFrom": {
+    "commit": "04b41f287399d08f051d62e320e4e6e639b9e0a5",
+    "files": [],
+    "unbuilt": [
+      "the Tasks page, from 'Add, tick and delete tasks that stay after a reload'",
+      "the pencil button and edit mode of each task, from 'Edit a task's title'"
+    ]
+  },
+  "screens": [
+    {
+      "id": "filter-all",
+      "title": "All tasks",
+      "criteria": [
+        "C1",
+        "C2",
+        "C6",
+        "C8"
+      ],
+      "shows": "'5 tasks left' at the right of the title; under the list 'All' (pressed), 'Active', 'Done' at the left and 'Clear completed' at the right"
+    },
+    {
+      "id": "filter-active",
+      "title": "Active tasks",
+      "criteria": [
+        "C3",
+        "C5",
+        "C8",
+        "C10"
+      ],
+      "shows": "'Active' pressed; only the five tasks not done"
+    },
+    {
+      "id": "filter-done",
+      "title": "Done tasks",
+      "criteria": [
+        "C3",
+        "C8",
+        "C9"
+      ],
+      "shows": "'Done' pressed; only the two done tasks"
+    },
+    {
+      "id": "filter-active-empty",
+      "title": "Active, none left",
+      "criteria": [
+        "C4",
+        "C8"
+      ],
+      "shows": "Every task done, 'Active' pressed: '0 tasks left' and the message 'Nothing left to do.'"
+    },
+    {
+      "id": "filter-done-empty",
+      "title": "Done, none yet",
+      "criteria": [
+        "C4",
+        "C8"
+      ],
+      "shows": "No task done, 'Done' pressed: the message 'No finished tasks yet.' and 'Clear completed' disabled"
+    }
+  ],
+  "notShown": [
+    {
+      "criterion": "C7",
+      "why": "with no tasks the count, filters and 'Clear completed' are absent: the page is the empty state of 'Add, tick and delete tasks', unchanged"
+    }
+  ]
+}
